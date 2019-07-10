@@ -1,0 +1,38 @@
+{
+  "name": "freenovel",
+  "version": "1.0.0",
+  "description": "Crawling free novel",
+  "main": "index.js",
+  "scripts": {
+    "dev": "supervisor index.js",
+    "start": "node index.js",
+    "eslint": "eslint spider",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/movingStars/freeNovel.git"
+  },
+  "keywords": [
+    "node",
+    "crawl",
+    "reptile",
+    "novel"
+  ],
+  "author": "junexjiao",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/movingStars/freeNovel/issues"
+  },
+  "homepage": "https://github.com/movingStars/freeNovel#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "express": "^4.17.1",
+    "nightmare": "^3.0.2",
+    "superagent": "^5.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^6.0.1",
+    "eslint-plugin-html": "^6.0.0"
+  }
+}
