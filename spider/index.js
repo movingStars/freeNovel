@@ -70,6 +70,7 @@ module.exports = {
         })
       )
     })
+    
     Promise.all(promises).then(() => {
       console.log('全部抓取完毕！！')
     })
