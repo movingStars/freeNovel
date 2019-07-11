@@ -28,7 +28,7 @@
 - 先到网站上面找到想要下载的小说（如 鬼迷婚窍），复制小说章节列表页面的地址（如 http://www.jingpinshucheng.com/book/26727.html ）到spider/index.js中的novelAddress属性上。
 - 设置novelName属性值为小说名字（如 鬼迷婚窍）
 - `npm start` (运行后自动在novels目录下生成与小说名同名的目录，目录下面是所有的小说内容，以章节划分为各个txt文件)
-- `npm run dev` 与 `npm start`差不多，唯一的区别是前者支持node的热部署（即修改代码后不需要重启服务，自动重新部署）
+- `npm run dev`(supervisor index.js) 与 `npm start`(node index.js)差不多，唯一的区别是前者支持node的热部署（即修改代码后不需要重启服务，自动重新部署）
 
 
 **如果这个项目有帮助到您，右上角点个星，谢谢**
