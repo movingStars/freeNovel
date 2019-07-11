@@ -32,6 +32,9 @@ module.exports = {
       })
   },
   crawling: function () {
+    if (!fs.existsSync('./novels')) {
+      fs.mkdirSync('./novels')
+    }
     this.crawlChapterArr(this.novelName)
   },
   crawlChapterArr: function (novelName) {
