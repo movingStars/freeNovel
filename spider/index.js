@@ -5,9 +5,9 @@ const fs = require('fs')
 const nightmare = new Nightmare()
 
 module.exports = {
-  siteHost: 'http://www.quanben5.com',
-  novelAddress: 'http://www.quanben5.com/n/doushentianxia/xiaoshuo.html',
-  novelName: '斗神天下',
+  siteHost: 'http://www.jingpinshucheng.com',
+  novelAddress: 'http://www.jingpinshucheng.com/book/26727.html',
+  novelName: '鬼迷婚窍',
   chapterArr: [],
   getHtmlBySuperAgent: function (url, title, cb = () => {}) {
     console.log(`开始抓取 - ${title}`)
@@ -22,8 +22,8 @@ module.exports = {
   getHtmlByNightmare: function (url, title) {
     return nightmare
       .goto(url)
-      .wait(500)
-      .evaluate(() => document.querySelector('div.row .wrapper #content').innerHTML)
+      .wait('body')
+      .evaluate(() => document.querySelector('div.content div#content').innerHTML)
       .then((htmlStr) => {
         return htmlStr
       })
@@ -41,10 +41,10 @@ module.exports = {
       console.log(`小说 - ${novelName} - 已存在`)
       return
     }
-    this.getHtmlBySuperAgent(this.novelAddress, '斗神天下章节信息', (res) => {
+    this.getHtmlBySuperAgent(this.novelAddress, `${this.novelName}章节信息`, (res) => {
       const $ = cheerio.load(res.text)
 
-      $('.row .box ul li a').slice(0,5).each((idx, ele) => {
+      $('div.content ul.list li:not(.chapter) a').each((idx, ele) => {
         let chapter = {
           name: $(ele).children().text(),
           url: $(ele).attr('href')
@@ -55,24 +55,16 @@ module.exports = {
     })
   },
   crawlChapter: function () {
-    const promises = []
-
     this.chapterArr.forEach((item, idx) => {
-      promises.push(
-        this.getHtmlByNightmare(this.siteHost + item.url, item.name).then((res) => {
-          let content = ''
-          const $ = cheerio.load(res)
-  
-          $('p').each((idx, ele) => {
-            content += $(ele).text() + '/r/n'
-          })
-          this.saveChapterTxt(content, idx)
+      this.getHtmlBySuperAgent(this.siteHost + item.url, item.name, (res) => {
+        let content = ''
+        const $ = cheerio.load(res.text)
+        
+        $('div.content div#content p').each((idx, ele) => {
+          content += $(ele).text() + '/r/n'
         })
-      )
-    })
-    
-    Promise.all(promises).then(() => {
-      console.log('全部抓取完毕！！')
+        this.saveChapterTxt(content, idx)
+      })
     })
   },
   saveChapterTxt: function (content, idx) {
