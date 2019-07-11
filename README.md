@@ -1,7 +1,7 @@
 # freeNovel
 ### 用Node爬取小说网站
 
-**网站地址：http://www.jingpinshucheng.com**
+**我们要爬取的小说网站地址：http://www.jingpinshucheng.com**
 
 **注：目前只支持单独爬取一本小说。后续待更新...**
 
