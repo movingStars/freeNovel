@@ -3,45 +3,98 @@ const Nightmare = require('nightmare')
 const cheerio = require('cheerio')
 const fs = require('fs')
 const nightmare = new Nightmare()
+const db = require('./db.js')
+const async = require('async')
 
 module.exports = {
   //网站主机地址
   siteHost: 'http://www.jingpinshucheng.com',
-  //要爬取的小说地址（章节列表页）
-  novelAddress: 'http://www.jingpinshucheng.com/book/26743.html',
-  //小说名字
-  novelName: '云龙破月',
-  //章节信息数组
-  chapterArr: [],
+  //分类页面地址
+  categoryPage: 'http://www.jingpinshucheng.com/category.html',
+  //当前小说已爬取的章节数
+  chapterNum: 0,
+  
   /**
-   * 开始爬取
+   * 开始抓取分类页面
    */
-  crawling: function () {
+  crawlCategoryPage: function () {
+    this.getHtmlBySuperAgent(this.categoryPage, '分类页面', (res) => {
+      const $ = cheerio.load(res.text)
+      const categoryList = []
+
+      $('.content ul.category li').each((idx, ele) => {
+        categoryList.push([
+          $(ele).find('a span:nth-child(2)').text(),
+          this.siteHost + $(ele).children('a').attr('href')
+        ])
+        if (idx === 0) {
+          this.crawlNovelListPage($(ele).find('a span:nth-child(2)').text(), this.siteHost + $(ele).children('a').attr('href'))
+        }
+      })
+      //创建分类表格，并存上数据(没有分类表的时候才执行，如果已经创建并且有数据，就不需要执行了)
+      // db.createCategoryTable(categoryList)
+    }, () => {
+      this.crawlCategoryPage()
+    })
+  },
+  /**
+   * 抓取小说列表页
+   */
+  crawlNovelListPage: function (categoryName, novelListUrl) {
+    this.getHtmlBySuperAgent(novelListUrl, `${categoryName}-分类列表页`, (res) => {
+      const $ = cheerio.load(res.text)
+      const novelList = []
+
+      $('.content .pic_txt_list').each((idx, ele) => {
+        novelList.push({
+          url: this.siteHost + $(ele).find('h3 a').attr('href'),
+          name: $(ele).find('h3 a span').text()
+        })
+      })
+      async.mapLimit(novelList, 1, (novel, callback) => {
+        console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        this.crawling(novel.url, novel.name, callback)
+      }, (err, result) => {
+        console.log(result)
+        console.log(`共 - ${result.length}部 - 小说----------爬取---------------完成----------`)
+        setTimeout(() => {
+          const nextPageUrl = this.siteHost + $('.content #page_next a').attr('href')
+          nextPageUrl && this.crawlNovelListPage(categoryName, nextPageUrl)
+        }, 5000)
+      })
+    }, () => {
+      this.crawlChapterListPage(categoryName, novelListUrl)
+    })
+  },
+  /**
+   * 开始爬取小说（一本）
+   */
+  crawling: function (novelAddress, novelName, novelCallback) {
     //判断novels目录是否已存在
     if (!fs.existsSync('./novels')) {
       fs.mkdirSync('./novels')
     }
     //爬取章节列表页
-    this.crawlChapterListPage(this.novelName)
+    return this.crawlChapterListPage(novelAddress, novelName, novelCallback)
   },
   /**
    * 爬取章节列表页
    * @param {*} novelName 小说的名字
    */
-  crawlChapterListPage: function (novelName) {
+  crawlChapterListPage: function (novelAddress, novelName, novelCallback) {
     //判断当前小说名目录是否已存在
     if (!fs.existsSync(`./novels/${novelName}`)) {
       fs.mkdirSync(`./novels/${novelName}`)
     } else {
       console.log(`小说 - ${novelName} - 已存在`)
+      novelCallback(null, `${novelName} - 已存在`)
       return
     }
     const pageList = []
 
     //爬取章节列表页
-    this.getHtmlBySuperAgent(this.novelAddress, `${this.novelName}章节列表页`, (res) => {
+    this.getHtmlBySuperAgent(novelAddress, `${novelName} - 章节列表页`, (res) => {
       const $ = cheerio.load(res.text)
-      const promiseArr = []
 
       //爬取列表页底部分页选择器的信息，查看一共有几页章节列表
       $('div.nlist_page #page_select option').each((idx, ele) => {
@@ -49,27 +102,49 @@ module.exports = {
         //将章节列表页的的url存到一个数组里面
         pageList.push(this.siteHost + pageUrl)
       })
-      //循环数组，对每一页章节列表进行爬取
-      pageList.forEach((item, idx) => {
-        //由于页面的爬取是异步的，我们又需要等每个章节列表页面爬取完成后，再继续执行，所以采用Promise.all的方式
-        promiseArr.push(this.crawlChapterArr(item, idx))
+      this.promiseCrawl(pageList, novelName, novelCallback)
+    }, () =>{
+      this.crawlChapterListPage(novelAddress, novelName, novelCallback)
+    })
+  },
+  promiseCrawl: function (pageList, novelName, novelCallback) {
+    let chapterArr = []
+    let chapterNames = ''
+    const promiseArr = []
+
+    console.log('=================开始爬取每个章节页面===============')
+
+    //循环数组，对每一页章节列表进行爬取
+    pageList.forEach((item, idx) => {
+      //由于页面的爬取是异步的，我们又需要等每个章节列表页面爬取完成后，再继续执行，所以采用Promise.all的方式
+      promiseArr.push(this.crawlChapterArr(item, novelName, idx))
+    })
+    Promise.all(promiseArr).then((values) => {
+      for (let i of values) {
+        chapterArr = chapterArr.concat(i)
+      }
+      for (let i of chapterArr) {
+        chapterNames += i.name + '/r/n-chapterList'
+      }
+      this.saveChapterListTxt(novelName, chapterNames)
+      //开始爬取每个章节页面
+      chapterArr.forEach((chapter, idx) => {
+        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
       })
-      Promise.all(promiseArr).then((values) => {
-        for (let i of values) {
-          this.chapterArr = this.chapterArr.concat(i)
-        }
-        //开始爬取每个章节页面
-        this.crawlChapterPage()
-      })
+    }).catch((res) => {
+      console.log(res.message)
+      if (res.code === 'failed') {
+        this.promiseCrawl(pageList, novelName, novelCallback)
+      }
     })
   },
   /**
    * 爬取单个的章节列表页
    * @param {*} url 页面url
    */
-  crawlChapterArr: function (url, idx) {
-    return new Promise((resolve) => {
-      this.getHtmlBySuperAgent(url, `${this.novelName} - 第${idx + 1}页章节信息`, (res) => {
+  crawlChapterArr: function (url, novelName, idx) {
+    return new Promise((resolve, reject) => {
+      this.getHtmlBySuperAgent(url, `${novelName} - 第${idx + 1}页章节信息`, (res) => {
         const chapterArr = []
         const $ = cheerio.load(res.text)
   
@@ -81,24 +156,37 @@ module.exports = {
           chapterArr.push(chapter)
         })
         resolve(chapterArr)
+      }, () => {
+        reject({
+          code: 'failed',
+          message: `${novelName} - 第${idx + 1}页章节信息 - %%%%%%%%%%%% 抓取失败 %%%%%%%%%%%%`
+        })
       })
     })
   },
   /**
    * 爬取章节内容
    */
-  crawlChapterPage: function () {
-    this.chapterArr.forEach((chapter, idx) => {
-      this.getHtmlBySuperAgent(this.siteHost + chapter.url, chapter.name, (res) => {
-        let content = ''
-        const $ = cheerio.load(res.text)
-        
-        $('div.content div#content p').each((idx, ele) => {
-          content += $(ele).text() + '/r/n'
-        })
-        //将章节内容保存到本地
-        this.saveChapterTxt(content, idx)
+  crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
+    this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
+      let content = ''
+      const $ = cheerio.load(res.text)
+      
+      $('div.content div#content p').each((idx, ele) => {
+        content += $(ele).text() + '/r/n'
       })
+      //将章节内容保存到本地
+      this.saveChapterTxt(novelName, content, idx)
+      this.chapterNum = this.chapterNum + 1
+
+      if (this.chapterNum === chapterArr.length) {
+        setTimeout(() => {
+          novelCallback(null, `${novelName} ----------爬取---------------完成----------`)
+          this.chapterNum = 0
+        }, 5000)
+      }
+    }, () => {
+      this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
     })
   },
   /**
@@ -107,11 +195,16 @@ module.exports = {
    * @param {*} title 为方便console.log查看，传入爬取时的大概内容
    * @param {*} cb 爬取成功的回调
    */
-  getHtmlBySuperAgent: function (url, title, cb = () => {}) {
+  getHtmlBySuperAgent: function (url, title, cb = () => {}, fail = () => {}) {
     console.log(`开始抓取 - ${title}`)
-    superAgent.get(url).end((err, res) => {
+    superAgent.get(url).timeout(5000).end((err, res) => {
       if (err) {
-        console.log(`${title} - 抓取失败 - ${err}`)
+        if (err.timeout) {
+          console.log(`${title} - 抓取超时 - ${err}`)
+        } else {
+          console.log(`${title} - 抓取失败 - ${err}`)
+        }
+        fail()
       } else {
         cb(res)
       }
@@ -139,13 +232,27 @@ module.exports = {
    * @param {*} content 要保存的内容
    * @param {*} idx 为区分是第几章节，采用数字id+1的方式
    */
-  saveChapterTxt: function (content, idx) {
+  saveChapterTxt: function (novelName, content, idx) {
     //写入文件
-    fs.writeFile(`./novels/${this.novelName}/${idx + 1}.txt`, content, function (err) {
+    fs.writeFile(`./novels/${novelName}/${idx + 1}.txt`, content, function (err) {
       if (err) {
-        console.log(`${idx + 1}.txt - 保存失败 - ${err}`)
+        console.log(`${novelName} - ${idx + 1}.txt - 保存失败 - ${err}`)
       } else {
-        console.log(`${idx + 1}.txt - 保存成功！！！`)
+        console.log(`${novelName} - ${idx + 1}.txt - 保存成功！！！`)
+      }
+    })
+  },
+  /**
+   * 将章节列表以txt的格式保存到本地
+   * @param {*} content 要保存的内容
+   */
+  saveChapterListTxt: function (novelName, content) {
+    //写入文件
+    fs.writeFile(`./novels/${novelName}/chapterList.txt`, content, function (err) {
+      if (err) {
+        console.log(`${novelName} - chapterList.txt - 保存失败 - ${err}`)
+      } else {
+        console.log(`${novelName} - chapterList.txt - 保存成功！！！`)
       }
     })
   }

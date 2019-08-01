@@ -4,8 +4,9 @@
   "description": "Crawling free novel",
   "main": "index.js",
   "scripts": {
-    "dev": "supervisor index.js",
-    "start": "node index.js",
+    "supervisor": "supervisor index.js",
+    "start": "NODE_ENV=dev node index.js",
+    "prod": "NODE_ENV=prod node index.js",
     "eslint": "eslint spider",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -26,8 +27,10 @@
   },
   "homepage": "https://github.com/movingStars/freeNovel#readme",
   "dependencies": {
+    "async": "^3.1.0",
     "cheerio": "^1.0.0-rc.3",
     "express": "^4.17.1",
+    "mysql": "^2.17.1",
     "nightmare": "^3.0.2",
     "superagent": "^5.1.0"
   },
