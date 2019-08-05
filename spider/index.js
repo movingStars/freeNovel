@@ -11,8 +11,16 @@ module.exports = {
   siteHost: 'http://www.jingpinshucheng.com',
   //分类页面地址
   categoryPage: 'http://www.jingpinshucheng.com/category.html',
+  //当前查询的分类id
+  currentCategoryId: 1,
   //当前小说已爬取的章节数
   chapterNum: 0,
+  //小说信息数组
+  novelsInfoArr: [],
+  //当前爬取的小说信息
+  currentNovelInfo: [],
+  //当前爬取小说的字数
+  currentNovelWordCount: 0,
   
   /**
    * 开始抓取分类页面
@@ -27,12 +35,16 @@ module.exports = {
           $(ele).find('a span:nth-child(2)').text(),
           this.siteHost + $(ele).children('a').attr('href')
         ])
-        if (idx === 0) {
+        if (idx === this.currentCategoryId - 1) {
           this.crawlNovelListPage($(ele).find('a span:nth-child(2)').text(), this.siteHost + $(ele).children('a').attr('href'))
         }
       })
-      //创建分类表格，并存上数据(没有分类表的时候才执行，如果已经创建并且有数据，就不需要执行了)
-      // db.createCategoryTable(categoryList)
+      //存储分类数据
+      db.getCategoryData((res) => {
+        if (res.length <= 0) {
+          db.saveCategory(categoryList)
+        }
+      })
     }, () => {
       this.crawlCategoryPage()
     })
@@ -57,13 +69,20 @@ module.exports = {
       }, (err, result) => {
         console.log(result)
         console.log(`共 - ${result.length}部 - 小说----------爬取---------------完成----------`)
+
+        //把已爬取完的20部小说数据存到mysql数据库
+        console.log(this.novelsInfoArr)
+        db.saveNovelsInfo([...this.novelsInfoArr])
+        this.novelsInfoArr = []
+
+        //5s后爬取下一页
         setTimeout(() => {
           const nextPageUrl = this.siteHost + $('.content #page_next a').attr('href')
           nextPageUrl && this.crawlNovelListPage(categoryName, nextPageUrl)
         }, 5000)
       })
     }, () => {
-      this.crawlChapterListPage(categoryName, novelListUrl)
+      this.crawlNovelListPage(categoryName, novelListUrl)
     })
   },
   /**
@@ -102,7 +121,16 @@ module.exports = {
         //将章节列表页的的url存到一个数组里面
         pageList.push(this.siteHost + pageUrl)
       })
+
       this.promiseCrawl(pageList, novelName, novelCallback)
+      this.currentNovelInfo = [
+        novelName, 
+        this.siteHost + $('.content .pic_txt_list .pic img').attr('src'), 
+        $('.content .pic_txt_list .info span').slice(0,1).text(), 
+        this.currentCategoryId, 
+        $('.content .pic_txt_list .info span').slice(2,1) === '完结' ? 0 : 1, 
+        $('.content .description').text()
+      ]
     }, () =>{
       this.crawlChapterListPage(novelAddress, novelName, novelCallback)
     })
@@ -174,15 +202,22 @@ module.exports = {
       
       $('div.content div#content p').each((idx, ele) => {
         content += $(ele).text() + '/r/n'
+        this.currentNovelWordCount += content.length
       })
       //将章节内容保存到本地
       this.saveChapterTxt(novelName, content, idx)
       this.chapterNum = this.chapterNum + 1
 
       if (this.chapterNum === chapterArr.length) {
+        this.currentNovelInfo.push(this.currentNovelWordCount)
+        this.novelsInfoArr.push([...this.currentNovelInfo])
+        console.log(this.currentNovelInfo)
+
         setTimeout(() => {
           novelCallback(null, `${novelName} ----------爬取---------------完成----------`)
           this.chapterNum = 0
+          this.currentNovelInfo = []
+          this.currentNovelWordCount = 0
         }, 5000)
       }
     }, () => {
@@ -255,5 +290,9 @@ module.exports = {
         console.log(`${novelName} - chapterList.txt - 保存成功！！！`)
       }
     })
+  },
+  createTables: function () {
+    db.createCategoryTable()
+    db.createNovelTable()
   }
 }
