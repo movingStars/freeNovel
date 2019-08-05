@@ -72,7 +72,7 @@ module.exports = {
 
         //把已爬取完的20部小说数据存到mysql数据库
         console.log(this.novelsInfoArr)
-        db.saveNovelsInfo([...this.novelsInfoArr])
+        this.novelsInfoArr.length > 0 && db.saveNovelsInfo([...this.novelsInfoArr])
         this.novelsInfoArr = []
 
         //5s后爬取下一页
@@ -114,6 +114,13 @@ module.exports = {
     //爬取章节列表页
     this.getHtmlBySuperAgent(novelAddress, `${novelName} - 章节列表页`, (res) => {
       const $ = cheerio.load(res.text)
+
+      if ($('div.content ul.list li:not(.chapter)').length <= 0) {
+        console.log('%%%%%%%%%%%%没有章节信息%%%%%%%%%%%%%%%')
+        this.removeNovelFolder(novelName)
+        novelCallback()
+        return
+      }
 
       //爬取列表页底部分页选择器的信息，查看一共有几页章节列表
       $('div.nlist_page #page_select option').each((idx, ele) => {
@@ -175,7 +182,7 @@ module.exports = {
       this.getHtmlBySuperAgent(url, `${novelName} - 第${idx + 1}页章节信息`, (res) => {
         const chapterArr = []
         const $ = cheerio.load(res.text)
-  
+
         $('div.content ul.list li:not(.chapter) a').each((idx, ele) => {
           let chapter = {
             name: $(ele).children().text(),
@@ -294,5 +301,13 @@ module.exports = {
   createTables: function () {
     db.createCategoryTable()
     db.createNovelTable()
+  },
+  removeNovelFolder: function (novelName) {
+    console.log(novelName)
+    //删除目录
+    fs.rmdir(`./novels/${novelName}`, (err) => {
+      if (err) throw err
+      console.log(`${novelName}  - 删除成功`)
+    })
   }
 }
