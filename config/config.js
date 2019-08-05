@@ -10,7 +10,7 @@ const devConfig = {
 
 const prodConfig = {
   mysql: {
-    host: '118.24.172.237',
+    host: 'localhost',
     user: 'root',
     password: '13880316721/*qi',
     database: 'freeNovel',

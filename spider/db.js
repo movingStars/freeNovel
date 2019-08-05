@@ -11,6 +11,7 @@ module.exports = {
     db.query(sql, (err, result) => {
       if (err) {
         console.log(`创建 分类表 失败 - ${err}`)
+        throw err
       } else {
         console.log(`创建 分类表 成功 - ${JSON.stringify(result)}`)
       }
@@ -33,6 +34,7 @@ module.exports = {
     db.query(sql, (err, result) => {
       if (err) {
         console.log(`创建 小说表 失败 - ${err}`)
+        throw err
       } else {
         console.log(`创建 小说表 成功 - ${JSON.stringify(result)}`)
       }
