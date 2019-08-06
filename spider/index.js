@@ -93,6 +93,8 @@ module.exports = {
     if (!fs.existsSync('./novels')) {
       fs.mkdirSync('./novels')
     }
+    //windows操作系统中文件名不能包含某些特殊字符
+    novelName = novelName.replace(/[\\/:*?"<>|]+/ig, '')
     //爬取章节列表页
     return this.crawlChapterListPage(novelAddress, novelName, novelCallback)
   },

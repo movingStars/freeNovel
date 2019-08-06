@@ -1,10 +1,8 @@
 const express = require('express')
-const spider = require('./spider/index.js')
+const router = require('./router/index.js')
 const app = express()
 
-app.get('/', (req, res) => {
-  res.send('Hello world!')
-})
+app.use('/api', router)
 
 let server = app.listen(8787, 'localhost', () => {
   let host = server.address().address
@@ -12,6 +10,3 @@ let server = app.listen(8787, 'localhost', () => {
 
   console.log('Running at http://%s:%s', host, port)
 })
-
-spider.createTables()
-spider.crawlCategoryPage()

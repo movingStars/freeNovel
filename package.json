@@ -5,10 +5,17 @@
   "main": "index.js",
   "scripts": {
     "supervisor": "supervisor index.js",
-    "start": "NODE_ENV=dev node index.js",
+
+    "dev": "NODE_ENV=dev node index.js",
     "prod": "NODE_ENV=prod node index.js",
-    "dev-win": "set NODE_ENV=dev && node index.js",
-    "prod-win": "set NODE_ENV=prod && node index.js",
+    "dev:win": "set NODE_ENV=dev && node index.js",
+    "prod:win": "set NODE_ENV=prod && node index.js",
+
+    "spider:dev": "NODE_ENV=dev node spider.js",
+    "spider:prod": "NODE_ENV=prod node spider.js",
+    "spider:dev:win": "set NODE_ENV=dev && node spider.js",
+    "spider:prod:win": "set NODE_ENV=prod && node spider.js",
+
     "eslint": "eslint spider",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
