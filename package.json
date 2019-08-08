@@ -5,17 +5,14 @@
   "main": "index.js",
   "scripts": {
     "supervisor": "supervisor index.js",
-
     "dev": "NODE_ENV=dev node index.js",
     "prod": "NODE_ENV=prod node index.js",
     "dev:win": "set NODE_ENV=dev && node index.js",
     "prod:win": "set NODE_ENV=prod && node index.js",
-
     "spider:dev": "NODE_ENV=dev node spider.js",
     "spider:prod": "NODE_ENV=prod node spider.js",
     "spider:dev:win": "set NODE_ENV=dev && node spider.js",
     "spider:prod:win": "set NODE_ENV=prod && node spider.js",
-
     "eslint": "eslint spider",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -37,6 +34,7 @@
   "homepage": "https://github.com/movingStars/freeNovel#readme",
   "dependencies": {
     "async": "^3.1.0",
+    "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.3",
     "express": "^4.17.1",
     "mysql": "^2.17.1",

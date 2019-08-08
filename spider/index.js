@@ -5,6 +5,7 @@ const fs = require('fs')
 const nightmare = new Nightmare()
 const db = require('./db.js')
 const async = require('async')
+const config = require('../config/config.js')
 
 module.exports = {
   //网站主机地址
@@ -21,6 +22,9 @@ module.exports = {
   currentNovelInfo: [],
   //当前爬取小说的字数
   currentNovelWordCount: 0,
+  //超时次数
+  timeoutUrl: '',
+  timeoutCount: 0,
   
   /**
    * 开始抓取分类页面
@@ -79,7 +83,7 @@ module.exports = {
         setTimeout(() => {
           const nextPageUrl = this.siteHost + $('.content #page_next a').attr('href')
           nextPageUrl && this.crawlNovelListPage(categoryName, nextPageUrl)
-        }, 5000)
+        }, 1000)
       })
     }, () => {
       this.crawlNovelListPage(categoryName, novelListUrl)
@@ -90,8 +94,8 @@ module.exports = {
    */
   crawling: function (novelAddress, novelName, novelCallback) {
     //判断novels目录是否已存在
-    if (!fs.existsSync('./novels')) {
-      fs.mkdirSync('./novels')
+    if (!fs.existsSync('./public/novels')) {
+      fs.mkdirSync('./public/novels')
     }
     //windows操作系统中文件名不能包含某些特殊字符
     novelName = novelName.replace(/[\\/:*?"<>|]+/ig, '')
@@ -104,8 +108,8 @@ module.exports = {
    */
   crawlChapterListPage: function (novelAddress, novelName, novelCallback) {
     //判断当前小说名目录是否已存在
-    if (!fs.existsSync(`./novels/${novelName}`)) {
-      fs.mkdirSync(`./novels/${novelName}`)
+    if (!fs.existsSync(`./public/novels/${novelName}`)) {
+      fs.mkdirSync(`./public/novels/${novelName}`)
     } else {
       console.log(`小说 - ${novelName} - 已存在`)
       novelCallback(null, `${novelName} - 已存在`)
@@ -132,13 +136,21 @@ module.exports = {
       })
 
       this.promiseCrawl(pageList, novelName, novelCallback)
+
+      const imageSrc = $('.content .pic_txt_list .pic img').attr('src')
+      const idx = imageSrc.lastIndexOf('/')
+      const imageType = imageSrc.substr(idx + 1).split('.')[1]
+      const imageName = `${novelName}.${imageType}`
+      this.saveNovelImage(imageSrc, imageName)
       this.currentNovelInfo = [
-        novelName, 
-        this.siteHost + $('.content .pic_txt_list .pic img').attr('src'), 
-        $('.content .pic_txt_list .info span').slice(0,1).text(), 
-        this.currentCategoryId, 
-        $('.content .pic_txt_list .info span').slice(2,1) === '完结' ? 0 : 1, 
-        $('.content .description').text()
+        novelName, //小说名
+        `${config.siteHost}/images/${imageName}`, //小说图片本地地址
+        $('.content .pic_txt_list .info span').slice(0,1).text(), //作者名
+        this.currentCategoryId, //类别
+        $('.content .pic_txt_list .info span').slice(2,1) === '完结' ? 1 : 0, //更新状态
+        $('.content .description').text(),//简介
+        this.currentNovelInfo[4] ? $('.content > .update > p a:nth-child(2) span').text() : '',//记录最新章节名
+        novelAddress//记录小说链接，便于之后定时更新
       ]
     }, () =>{
       this.crawlChapterListPage(novelAddress, novelName, novelCallback)
@@ -227,7 +239,7 @@ module.exports = {
           this.chapterNum = 0
           this.currentNovelInfo = []
           this.currentNovelWordCount = 0
-        }, 5000)
+        }, 1000)
       }
     }, () => {
       this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
@@ -278,7 +290,7 @@ module.exports = {
    */
   saveChapterTxt: function (novelName, content, idx) {
     //写入文件
-    fs.writeFile(`./novels/${novelName}/${idx + 1}.txt`, content, function (err) {
+    fs.writeFile(`./public/novels/${novelName}/${idx + 1}.txt`, content, function (err) {
       if (err) {
         console.log(`${novelName} - ${idx + 1}.txt - 保存失败 - ${err}`)
       } else {
@@ -292,7 +304,7 @@ module.exports = {
    */
   saveChapterListTxt: function (novelName, content) {
     //写入文件
-    fs.writeFile(`./novels/${novelName}/chapterList.txt`, content, function (err) {
+    fs.writeFile(`./public/novels/${novelName}/chapterList.txt`, content, function (err) {
       if (err) {
         console.log(`${novelName} - chapterList.txt - 保存失败 - ${err}`)
       } else {
@@ -307,9 +319,28 @@ module.exports = {
   removeNovelFolder: function (novelName) {
     console.log(novelName)
     //删除目录
-    fs.rmdir(`./novels/${novelName}`, (err) => {
+    fs.rmdir(`./public/novels/${novelName}`, (err) => {
       if (err) throw err
       console.log(`${novelName}  - 删除成功`)
+    })
+  },
+  saveNovelImage: function (imageSrc, imageName) {
+    console.log(imageName)
+    if (!fs.existsSync('./public/images')) {
+      fs.mkdirSync('./public/images')
+    }
+    superAgent.get(this.siteHost + imageSrc).then((res) => {
+      if (res.statusCode === 200) {
+        fs.writeFile(`./public/images/${imageName}`, res.body, (err) => {
+          if (err) {
+            this.saveNovelImage(imageSrc, imageName)
+          } else {
+            console.log('图片保存成功')
+          }
+        })
+      } else {
+        this.saveNovelImage(imageSrc, imageName)
+      }
     })
   }
 }

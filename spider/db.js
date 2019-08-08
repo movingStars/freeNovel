@@ -26,6 +26,8 @@ module.exports = {
       category_id int(2) comment '小说类型',
       update_type int(2) null comment '更新状态',
       intro varchar(255) null,
+      new_chapter_name varchar(255) null,
+      novel_address varchar(255) null,
       word_count bigint(15) null,
       created_at datetime not null default CURRENT_TIMESTAMP(),
       foreign key(category_id) references category(id)
@@ -65,7 +67,7 @@ module.exports = {
   },
   saveNovelsInfo: function (novelsInfoArr) {
     let sql = `insert into novels
-      (name, logo_url, author_name, category_id, update_type, intro, word_count) 
+      (name, logo_url, author_name, category_id, update_type, intro, new_chapter_name, novel_address, word_count) 
       values ?`
     
     db.query(sql, [novelsInfoArr], (err, result) => {

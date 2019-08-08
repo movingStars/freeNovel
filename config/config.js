@@ -5,7 +5,8 @@ const devConfig = {
     password: 'xj891020',
     database: 'freeNovel',
     port: 3306
-  }
+  },
+  siteHost: 'http://127.0.0.1:8787'
 }
 
 const prodConfig = {
@@ -15,10 +16,11 @@ const prodConfig = {
     password: '13880316721/*qi',
     database: 'freeNovel',
     port: 3306
-  }
+  },
+  siteHost: 'http://127.0.0.1:8787'
 }
 
-module.exports = {
-  devConfig,
-  prodConfig
-}
+/* global process */
+const config = process.env.NODE_ENV === 'dev' ? devConfig : prodConfig
+
+module.exports = config
