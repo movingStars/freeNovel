@@ -1,4 +1,6 @@
 # dependencies
 /node_modules
-/public/novels/*
 /public/images/*
+/public/novels/*
+!/public/images/
+!/public/novels/
