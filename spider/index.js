@@ -218,11 +218,15 @@ module.exports = {
    */
   crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
     this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
-      let content = ''
       const $ = cheerio.load(res.text)
+      const chapterName = $('div.content h2:nth-child(1)').text()
+      let content = chapterName.trim() + '/r/n'
       
       $('div.content div#content p').each((idx, ele) => {
-        content += $(ele).text() + '/r/n'
+        if ($(ele).text() === '' || $(ele).text().split(' ').join('') === chapterName.split(' ').join('')) {
+          return
+        }
+        content += $(ele).text().trim() + '/r/n'
         this.currentNovelWordCount += content.length
       })
       //将章节内容保存到本地

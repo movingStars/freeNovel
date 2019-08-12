@@ -1,6 +1,12 @@
 const express = require('express')
 const router = express.Router()
-const { getBestList, getNovelInfo } = require('../models/novels.js')
+const { 
+  getBestList,
+  getNovelInfo,
+  getChapterContent,
+  getChapterList,
+  getCategoryList
+} = require('../models/novels.js')
 
 router.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
@@ -10,5 +16,8 @@ router.use((req, res, next) => {
 
 router.get('/best-list', getBestList)
 router.get('/novel-info', getNovelInfo)
+router.get('/chapter-content', getChapterContent)
+router.get('/chapter-list', getChapterList)
+router.get('/category-list', getCategoryList)
 
 module.exports = router
