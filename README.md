@@ -9,7 +9,7 @@
 -
 - config
     - config.js
-- modules
+- models
     - category.js
     - novel.js
 - node_modules
