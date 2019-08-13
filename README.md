@@ -14,7 +14,7 @@
     - novel.js
 - node_modules
 - public
-    -images
+    - images
         - 鬼迷婚窍.jpg
     - novels
         - 鬼迷婚窍
