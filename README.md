@@ -3,19 +3,32 @@
 
 **我们要爬取的小说网站地址：http://www.jingpinshucheng.com**
 
-**注：目前只支持单独爬取一本小说。后续待更新...**
+**注：已支持多本查询，但只能一次查一个分类的**
 
 **项目目录：**
 -
+- config
+    - config.js
+- modules
+    - category.js
+    - novel.js
 - node_modules
-- novels
-    - 鬼迷婚窍
-        - 1.txt
-        - 2.txt
-        - ......
+- public
+    -images
+        - 鬼迷婚窍.jpg
+    - novels
+        - 鬼迷婚窍
+            - 1.txt
+            - 2.txt
+            - ......
+- router
+    - index.js
 - spider
+    - db.js
     - index.js
 - index.js
+- spider.js
+- server.js
 - package.json
 - 其他配置文件
 
@@ -25,10 +38,9 @@
 - 
 - git clone https://github.com/movingStars/freeNovel.git
 - cpnm i  或者  npm i
-- 先到网站上面找到想要下载的小说（如 鬼迷婚窍），复制小说章节列表页面的地址（如 http://www.jingpinshucheng.com/book/26727.html ）到spider/index.js中的novelAddress属性上。
-- 设置novelName属性值为小说名字（如 鬼迷婚窍）
-- `npm start` (运行后自动在novels目录下生成与小说名同名的目录，目录下面是所有的小说内容，以章节划分为各个txt文件)
-- `npm run dev`(supervisor index.js) 与 `npm start`(node index.js)差不多，唯一的区别是前者支持node的热部署（即修改代码后不需要重启服务，自动重新部署）
+- spider目录下的index.js文件中，currentCategoryId代表本次要查询的分类id，修改为你需要爬取的分类id
+- 执行`npm run spider:dev`开始爬取，如果实在线上则执行`npm run spider:prod`，如果线上是Windows环境，则执行`npm run spider:prod:win`
+- 执行`npm run dev`开启node服务
 
 
 **如果这个项目有帮助到您，右上角点个星，谢谢**
@@ -40,3 +52,4 @@
 **bug修复**
 -
 - [x] ~~章节列表页是带分页的，目前只能抓取到第一页~~
+- [] 看能不能同时爬取多个分类，目前一次只能爬取一本小说，需要一整天才能爬取完一个分类，太慢了
