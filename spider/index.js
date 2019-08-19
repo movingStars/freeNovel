@@ -3,9 +3,18 @@ const Nightmare = require('nightmare')
 const cheerio = require('cheerio')
 const fs = require('fs')
 const nightmare = new Nightmare()
-const db = require('./db.js')
 const async = require('async')
 const config = require('../config/config.js')
+
+const {
+  createCategoryTable,
+  createNovelTable,
+  createSearchHistoryTable,
+  createBookShelfTable,
+  createUsersTable
+} = require('../models/tables.js')
+const { getCategoryData, saveCategory } = require('../models/category.js')
+const { saveNovelsInfo } = require('../models/novels.js')
 
 module.exports = {
   //网站主机地址
@@ -13,7 +22,7 @@ module.exports = {
   //分类页面地址
   categoryPage: 'http://www.jingpinshucheng.com/category.html',
   //当前查询的分类id
-  currentCategoryId: 1,
+  currentCategoryId: 2,
   //当前小说已爬取的章节数
   chapterNum: 0,
   //小说信息数组
@@ -44,9 +53,9 @@ module.exports = {
         }
       })
       //存储分类数据
-      db.getCategoryData((res) => {
+      getCategoryData((res) => {
         if (res.length <= 0) {
-          db.saveCategory(categoryList)
+          saveCategory(categoryList)
         }
       })
     }, () => {
@@ -76,7 +85,7 @@ module.exports = {
 
         //把已爬取完的20部小说数据存到mysql数据库
         console.log(this.novelsInfoArr)
-        this.novelsInfoArr.length > 0 && db.saveNovelsInfo([...this.novelsInfoArr])
+        this.novelsInfoArr.length > 0 && saveNovelsInfo([...this.novelsInfoArr])
         this.novelsInfoArr = []
 
         //5s后爬取下一页
@@ -317,8 +326,11 @@ module.exports = {
     })
   },
   createTables: function () {
-    db.createCategoryTable()
-    db.createNovelTable()
+    createCategoryTable()
+    createNovelTable()
+    createSearchHistoryTable()
+    createBookShelfTable()
+    createUsersTable()
   },
   removeNovelFolder: function (novelName) {
     console.log(novelName)
