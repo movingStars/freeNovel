@@ -359,7 +359,8 @@ module.exports = {
     })
   },
   saveNovelImage: function (imageSrc, imageName) {
-    console.log(imageName)
+    console.log(imageSrc, imageName)
+    if (!imageSrc || !imageName) return
     if (!fs.existsSync('./public/images')) {
       fs.mkdirSync('./public/images')
     }
