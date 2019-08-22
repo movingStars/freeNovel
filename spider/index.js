@@ -364,7 +364,9 @@ module.exports = {
     if (!fs.existsSync('./public/images')) {
       fs.mkdirSync('./public/images')
     }
-    superAgent.get(this.siteHost + imageSrc).then((res) => {
+    const url = imageSrc.includes('http') ? imageSrc : this.siteHost + imageSrc
+    
+    superAgent.get(url).then((res) => {
       if (res.statusCode === 200) {
         fs.writeFile(`./public/images/${imageName}`, res.body, (err) => {
           if (err) {
