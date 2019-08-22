@@ -34,7 +34,7 @@ module.exports = {
   //开始爬取小说的时间戳
   startTimeTemp: 0,
   //限制超时时间(s)
-  overtimeTime: 5 * 60,
+  overtimeTime: 3 * 60,
   
   /**
    * 开始抓取分类页面
@@ -71,7 +71,7 @@ module.exports = {
       const $ = cheerio.load(res.text)
       const novelList = []
 
-      $('.content .pic_txt_list').slice(14,16).each((idx, ele) => {
+      $('.content .pic_txt_list').each((idx, ele) => {
         novelList.push({
           url: this.siteHost + $(ele).find('h3 a').attr('href'),
           name: $(ele).find('h3 a span').text()
