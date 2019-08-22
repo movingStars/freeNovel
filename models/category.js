@@ -1,4 +1,5 @@
 const db = require('../server.js')
+const boom = require('boom')
 
 module.exports = {
   saveCategory: function (categoryNames) {
@@ -24,15 +25,12 @@ module.exports = {
       }
     })
   },
-  getCategoryList: function (req, res) {
+  getCategoryList: function (req, res, next) {
     const sql = 'select id,name from category;'
 
     db.query(sql, (err, result) => {
       if (err) {
-        res.send({
-          status: 500,
-          message: '数据库查询失败'
-        })
+        next(boom.badImplementation('500 - 数据库查询失败', { err }))
       } else {
         res.send(result)
       }

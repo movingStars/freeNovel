@@ -22,7 +22,7 @@ module.exports = {
   //分类页面地址
   categoryPage: 'http://www.jingpinshucheng.com/category.html',
   //当前查询的分类id
-  currentCategoryId: 2,
+  currentCategoryId: 5,
   //当前小说已爬取的章节数
   chapterNum: 0,
   //小说信息数组
@@ -31,9 +31,10 @@ module.exports = {
   currentNovelInfo: [],
   //当前爬取小说的字数
   currentNovelWordCount: 0,
-  //超时次数
-  timeoutUrl: '',
-  timeoutCount: 0,
+  //开始爬取小说的时间戳
+  startTimeTemp: 0,
+  //限制超时时间(s)
+  overtimeTime: 3 * 60,
   
   /**
    * 开始抓取分类页面
@@ -70,7 +71,7 @@ module.exports = {
       const $ = cheerio.load(res.text)
       const novelList = []
 
-      $('.content .pic_txt_list').each((idx, ele) => {
+      $('.content .pic_txt_list').slice(14,16).each((idx, ele) => {
         novelList.push({
           url: this.siteHost + $(ele).find('h3 a').attr('href'),
           name: $(ele).find('h3 a span').text()
@@ -108,6 +109,8 @@ module.exports = {
     }
     //windows操作系统中文件名不能包含某些特殊字符
     novelName = novelName.replace(/[\\/:*?"<>|]+/ig, '')
+    //设置开始爬取的时间
+    this.startTimeTemp = +new Date()
     //爬取章节列表页
     return this.crawlChapterListPage(novelAddress, novelName, novelCallback)
   },
@@ -116,6 +119,11 @@ module.exports = {
    * @param {*} novelName 小说的名字
    */
   crawlChapterListPage: function (novelAddress, novelName, novelCallback) {
+    //判断有没有超时
+    if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
+      novelCallback()
+      return null
+    }
     //判断当前小说名目录是否已存在
     if (!fs.existsSync(`./public/novels/${novelName}`)) {
       fs.mkdirSync(`./public/novels/${novelName}`)
@@ -166,6 +174,11 @@ module.exports = {
     })
   },
   promiseCrawl: function (pageList, novelName, novelCallback) {
+    //判断有没有超时
+    if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
+      novelCallback()
+      return null
+    }
     let chapterArr = []
     let chapterNames = ''
     const promiseArr = []
@@ -226,6 +239,11 @@ module.exports = {
    * 爬取章节内容
    */
   crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
+    //判断有没有超时
+    if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
+      novelCallback()
+      return null
+    }
     this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
       const $ = cheerio.load(res.text)
       const chapterName = $('div.content h2:nth-child(1)').text()
