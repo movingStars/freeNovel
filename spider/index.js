@@ -22,7 +22,8 @@ module.exports = {
   //分类页面地址
   categoryPage: 'http://www.jingpinshucheng.com/category.html',
   //当前查询的分类id
-  currentCategoryId: 5,
+  /* global process */
+  currentCategoryId: process.env.CATEGORY_ID || 1,
   //当前小说已爬取的章节数
   chapterNum: 0,
   //小说信息数组
@@ -89,10 +90,17 @@ module.exports = {
         this.novelsInfoArr.length > 0 && saveNovelsInfo([...this.novelsInfoArr])
         this.novelsInfoArr = []
 
-        //5s后爬取下一页
+        //1s后爬取下一页
         setTimeout(() => {
           const nextPageUrl = this.siteHost + $('.content #page_next a').attr('href')
-          nextPageUrl && this.crawlNovelListPage(categoryName, nextPageUrl)
+          if (nextPageUrl) {
+            this.crawlNovelListPage(categoryName, nextPageUrl)
+          } else {
+            console.log(`categoryId为${this.currentCategoryId}的小说------全部爬取完毕-------`)
+            console.log(`categoryId为${this.currentCategoryId}的小说------全部爬取完毕-------`)
+            console.log(`categoryId为${this.currentCategoryId}的小说------全部爬取完毕-------`)
+            console.log('--------------------重要的事情说三遍-------------------------------')
+          }
         }, 1000)
       })
     }, () => {
