@@ -8,5 +8,6 @@ module.exports = {
         return false
       }
     }
+    return true
   }
 }
