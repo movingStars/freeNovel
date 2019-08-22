@@ -34,7 +34,7 @@ module.exports = {
   //开始爬取小说的时间戳
   startTimeTemp: 0,
   //限制超时时间(s)
-  overtimeTime: 3 * 60,
+  overtimeTime: 5 * 60,
   
   /**
    * 开始抓取分类页面
