@@ -207,9 +207,12 @@ module.exports = {
       }
       this.saveChapterListTxt(novelName, chapterNames)
       //开始爬取每个章节页面
-      chapterArr.forEach((chapter, idx) => {
-        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
-      })
+      for (let i in chapterArr) {
+        if (this.crawlChapterPage(chapterArr[i], i, novelName, chapterArr, novelCallback) === 'timeout') {
+          novelCallback()
+          break
+        }
+      }
     }).catch((res) => {
       console.log(res.message)
       if (res.code === 'failed') {
@@ -249,8 +252,7 @@ module.exports = {
   crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
     //判断有没有超时
     if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
-      novelCallback()
-      return null
+      return 'timeout'
     }
     this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
       const $ = cheerio.load(res.text)
