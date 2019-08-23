@@ -36,6 +36,8 @@ module.exports = {
   startTimeTemp: 0,
   //限制超时时间(s)
   overtimeTime: 3 * 60,
+  //爬取章节内容时，判断是否已经超时
+  hasTimeout: false,
   
   /**
    * 开始抓取分类页面
@@ -207,12 +209,10 @@ module.exports = {
       }
       this.saveChapterListTxt(novelName, chapterNames)
       //开始爬取每个章节页面
-      for (let i in chapterArr) {
-        if (this.crawlChapterPage(chapterArr[i], i, novelName, chapterArr, novelCallback) === 'timeout') {
-          novelCallback()
-          break
-        }
-      }
+      chapterArr.forEach((chapter, idx) => {
+        this.hasTimeout = false
+        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
+      })
     }).catch((res) => {
       console.log(res.message)
       if (res.code === 'failed') {
@@ -252,7 +252,11 @@ module.exports = {
   crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
     //判断有没有超时
     if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
-      return 'timeout'
+      if (!this.hasTimeout) {
+        this.hasTimeout = true
+        novelCallback()
+      }
+      return null
     }
     this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
       const $ = cheerio.load(res.text)
