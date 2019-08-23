@@ -251,13 +251,6 @@ module.exports = {
    */
   crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
     //判断有没有超时
-    if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
-      if (!this.hasTimeout) {
-        this.hasTimeout = true
-        novelCallback()
-      }
-      return null
-    }
     this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
       const $ = cheerio.load(res.text)
       const chapterName = $('div.content h2:nth-child(1)').text()
@@ -287,7 +280,15 @@ module.exports = {
         }, 1000)
       }
     }, () => {
-      this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
+      if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
+        if (!this.hasTimeout) {
+          this.hasTimeout = true
+          novelCallback()
+        }
+        return null
+      } else {
+        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
+      }
     })
   },
   /**
