@@ -95,7 +95,7 @@ module.exports = {
         //1s后爬取下一页
         setTimeout(() => {
           const nextPageUrl = this.siteHost + $('.content #page_next a').attr('href')
-          if (nextPageUrl) {
+          if ($('.content #page_next a')) {
             this.crawlNovelListPage(categoryName, nextPageUrl)
           } else {
             console.log(`categoryId为${this.currentCategoryId}的小说------全部爬取完毕-------`)
@@ -122,7 +122,7 @@ module.exports = {
     //设置开始爬取的时间
     this.startTimeTemp = +new Date()
     //爬取章节列表页
-    return this.crawlChapterListPage(novelAddress, novelName, novelCallback)
+    this.crawlChapterListPage(novelAddress, novelName, novelCallback)
   },
   /**
    * 爬取章节列表页
@@ -130,7 +130,7 @@ module.exports = {
    */
   crawlChapterListPage: function (novelAddress, novelName, novelCallback) {
     //判断有没有超时
-    if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
+    if (+new Date() - this.startTimeTemp > this.overtimeTime * 1000) {
       novelCallback()
       return null
     }
@@ -183,10 +183,12 @@ module.exports = {
       this.crawlChapterListPage(novelAddress, novelName, novelCallback)
     })
   },
+  //爬取所有章节列表页
   promiseCrawl: function (pageList, novelName, novelCallback) {
     //判断有没有超时
-    if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
+    if (+new Date() - this.startTimeTemp > this.overtimeTime * 1000) {
       novelCallback()
+      this.removeNovelFolder(novelName)
       return null
     }
     let chapterArr = []
@@ -207,11 +209,13 @@ module.exports = {
       for (let i of chapterArr) {
         chapterNames += i.name + '/r/n-chapterList'
       }
+      //保存章节列表信息txt文件
       this.saveChapterListTxt(novelName, chapterNames)
+
       //开始爬取每个章节页面
       chapterArr.forEach((chapter, idx) => {
         this.hasTimeout = false
-        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
+        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback, this.startTimeTemp)
       })
     }).catch((res) => {
       console.log(res.message)
@@ -249,8 +253,15 @@ module.exports = {
   /**
    * 爬取章节内容
    */
-  crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback) {
-    //判断有没有超时
+  crawlChapterPage: function (chapter, idx, novelName, chapterArr, novelCallback, startTimeTemp) {
+    if (+new Date() - startTimeTemp > this.overtimeTime * 1000) {
+      if (!this.hasTimeout) {
+        this.hasTimeout = true
+        this.removeNovelFolder(novelName)
+        novelCallback()
+      }
+      return null
+    }
     this.getHtmlBySuperAgent(this.siteHost + chapter.url, `${novelName} - ${chapter.name}`, (res) => {
       const $ = cheerio.load(res.text)
       const chapterName = $('div.content h2:nth-child(1)').text()
@@ -280,15 +291,8 @@ module.exports = {
         }, 1000)
       }
     }, () => {
-      if (+new Date - this.startTimeTemp > this.overtimeTime * 1000) {
-        if (!this.hasTimeout) {
-          this.hasTimeout = true
-          novelCallback()
-        }
-        return null
-      } else {
-        this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback)
-      }
+      //判断有没有超时
+      this.crawlChapterPage(chapter, idx, novelName, chapterArr, novelCallback, startTimeTemp)
     })
   },
   /**
