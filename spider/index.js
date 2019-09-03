@@ -174,7 +174,7 @@ module.exports = {
         `${config.siteHost}/images/${imageName}`, //小说图片本地地址
         $('.content .pic_txt_list .info span').slice(0,1).text(), //作者名
         this.currentCategoryId, //类别
-        $('.content .pic_txt_list .info span').slice(2,1) === '完结' ? 1 : 0, //更新状态
+        $('.content .pic_txt_list .info span').slice(2,3) === '完结' ? 1 : 0, //更新状态
         $('.content .description').text(),//简介
         this.currentNovelInfo[4] ? $('.content > .update > p a:nth-child(2) span').text() : '',//记录最新章节名
         novelAddress//记录小说链接，便于之后定时更新
